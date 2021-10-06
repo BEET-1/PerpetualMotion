@@ -63,12 +63,15 @@ Builder.load_file('main.kv')
 Window.clearcolor = (.1, .1,.1, 1) # (WHITE)
 
 cyprus.open_spi()
-
+cyprus.initialize()
+cyprus.setup_servo(1)
+cyprus.set_servo_position(1,0)
 # ////////////////////////////////////////////////////////////////
 # //                    SLUSH/HARDWARE SETUP                    //
 # ////////////////////////////////////////////////////////////////
 sm = ScreenManager()
-ramp = stepper(port = 0, speed = INIT_RAMP_SPEED)
+ramp = stepper(port=0, micro_steps=32, hold_current=20, run_current=20, accel_current=20, deaccel_current=20,
+             steps_per_unit=200, speed=3)
 
 # ////////////////////////////////////////////////////////////////
 # //                       MAIN FUNCTIONS                       //
@@ -89,25 +92,48 @@ class MainScreen(Screen):
     staircaseSpeedText = '0'
     rampSpeed = INIT_RAMP_SPEED
     staircaseSpeed = 40
-
+    OnOff = True
+    gateText = ""
     def __init__(self, **kwargs):
         super(MainScreen, self).__init__(**kwargs)
         self.initialize()
 
     def toggleGate(self):
-        print("Open and Close gate here")
+        if self.OnOff == True:
+            self.gateText = "Open Gate"
+            cyprus.set_servo_position(2,0)
+            self.gate.text = self.gateText
+            self.OnOff = False
+            return
+        else:
+            self.gateText = "Close Gate"
+            self.gate.text = self.gateText
+            cyprus.set_servo_position(2, .5)
+            self.OnOff = True
 
     def toggleStaircase(self):
         print("Turn on and off staircase here")
         
     def toggleRamp(self):
-        print("Move ramp up and down here")
+
+            #ramp.set_speed(self.rampSpeed)
+            ramp.start_relative_move(29)
+            sleep(0.5)
+            while True:
+                if cyprus.read_gpio() & 0b0001 == 0:
+                    sleep(0.5)
+                    ramp.goHome()
+                    break
+
+
+
         
     def auto(self):
         print("Run through one cycle of the perpetual motion machine")
-        
+    spd = 0.0
     def setRampSpeed(self, speed):
-        print("Set the ramp speed and update slider text")
+        self.rampSpeed = speed/80
+
         
     def setStaircaseSpeed(self, speed):
         print("Set the staircase speed and update slider text")
