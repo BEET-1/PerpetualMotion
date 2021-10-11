@@ -90,10 +90,11 @@ ramp = stepper(port=0, micro_steps=32, hold_current=20, run_current=20, accel_cu
 class MainScreen(Screen):
     version = cyprus.read_firmware_version()
     staircaseSpeedText = '0'
-    rampSpeed = INIT_RAMP_SPEED
     staircaseSpeed = 40
     OnOff = True
+    OnOff2 = True
     gateText = ""
+    stairText = ""
     def __init__(self, **kwargs):
         super(MainScreen, self).__init__(**kwargs)
         self.initialize()
@@ -112,11 +113,21 @@ class MainScreen(Screen):
             self.OnOff = True
 
     def toggleStaircase(self):
-        print("Turn on and off staircase here")
+        if self.OnOff2 == True:
+            self.stairText = "Staircase On"
+            cyprus.set_pwm_values(1, period_value=100000, compare_value=100000, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
+            self.staircase.text = self.stairText
+            self.OnOff2 = False
+            return
+        else:
+            self.stairText = "Staircase Off"
+            self.staircase.text = self.stairText
+            cyprus.set_pwm_values(1, period_value=100000, compare_value=0, compare_mode=cyprus.LESS_THAN_OR_EQUAL)
+            self.OnOff2 = True
         
     def toggleRamp(self):
 
-            #ramp.set_speed(self.rampSpeed)
+            ramp.set_speed(self.rampSpeed.value)
             ramp.start_relative_move(29)
             sleep(0.5)
             while True:
@@ -127,12 +138,21 @@ class MainScreen(Screen):
 
 
 
-        
+    def goToStart(self):
+        ramp.goHome()
     def auto(self):
-        print("Run through one cycle of the perpetual motion machine")
+        ramp.goHome()
+        self.toggleStaircase()
+        self.toggleGate()
+        sleep(10.0)
+        self.toggleStaircase()
+        self.toggleGate()
+        sleep(5.0)
+        self.toggleRamp()
     spd = 0.0
     def setRampSpeed(self, speed):
-        self.rampSpeed = speed/80
+        #self.rampSpeed = speed/80
+        print(self.rampSpeed.value)
 
         
     def setStaircaseSpeed(self, speed):
